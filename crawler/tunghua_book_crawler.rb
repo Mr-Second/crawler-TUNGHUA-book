@@ -87,8 +87,8 @@ class TunghuaBookCrawler
           @books[internal_code][:publisher] = publisher
           @books[internal_code][:edition] = edition
           @books[internal_code][:external_image_url] = external_image_url
+          print "#{i}|"
         end # end thread do
-        print "#{i}|"
       end # each book
     end # crawl detail
     ThreadsWait.all_waits(*@detail_threads)
