@@ -81,6 +81,7 @@ class TunghuaBookCrawler
 
           edi_row = rows.find {|row| row.text.include?('版次')}
           edition = edi_row && edi_row.css('td').last.text.to_i
+          edition = nil if edition == 0
 
           external_image_url = doc.css('img').map {|img| img[:src]}.find {|src| src.include?("http://www.tunghua.com.tw//upload")}
 
