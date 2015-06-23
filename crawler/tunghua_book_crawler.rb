@@ -6,7 +6,7 @@ require 'crawler_rocks'
 require 'thread'
 require 'thwait'
 
-class DonhuaBookCrawler
+class TunghuaBookCrawler
   include CrawlerRocks::DSL
 
   def initialize
@@ -98,6 +98,6 @@ class DonhuaBookCrawler
 
 end
 
-cc = DonhuaBookCrawler.new
+cc = TunghuaBookCrawler.new
 File.write('donhwa_books.json', JSON.pretty_generate(cc.books(detail: true)))
 
