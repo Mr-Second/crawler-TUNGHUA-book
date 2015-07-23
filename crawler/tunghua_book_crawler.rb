@@ -3,13 +3,18 @@ require 'json'
 require 'iconv'
 require 'crawler_rocks'
 
+require 'book_toolkit'
+
 require 'thread'
 require 'thwait'
 
 class TunghuaBookCrawler
   include CrawlerRocks::DSL
 
-  def initialize
+  def initialize update_progress: nil, after_each: nil
+    @update_progress_proc = update_progress
+    @after_each_proc = after_each
+
     @search_url = "http://www.tunghua.com.tw/search_ok.php"
     @ic = Iconv.new("utf-8//translit//IGNORE","big5")
   end
@@ -42,14 +47,26 @@ class TunghuaBookCrawler
           internal_code = nil
           internal_code = url && url.match(/(?<=oid=)\d+/).to_s
 
+          isbn = nil
+          isbn = datas[1] && datas[1].text.strip || datas[0] && datas[0].text.strip
+          invalid_isbn = nil;
+          begin
+            isbn = BookToolkit.to_isbn13(isbn)
+          rescue Exception => e
+            invalid_isbn = isbn
+            isbn = nil
+          end
+
           @books[internal_code] = {
-            isbn_10: datas[0] && datas[0].text.strip,
-            isbn: datas[1] && datas[1].text.strip,
+            # isbn_10: datas[0] && datas[0].text.strip,
+            invalid_isbn: invalid_isbn,
+            isbn: isbn,
             author: datas[2] && datas[2].text.strip,
             name: datas[3] && datas[3].text.strip,
-            price: datas[5] && datas[5].text.gsub(/[^\d]/, '').to_i,
+            original_price: datas[5] && datas[5].text.gsub(/[^\d]/, '').to_i,
             internal_code: internal_code,
-            url: url
+            url: url,
+            known_supplier: 'tunghua'
           }
         end # end each row
         print "#{i}|"
@@ -88,7 +105,10 @@ class TunghuaBookCrawler
           @books[internal_code][:publisher] = publisher
           @books[internal_code][:edition] = edition
           @books[internal_code][:external_image_url] = external_image_url
-          print "#{i}|"
+
+          @after_each_proc.call(book: @books[internal_code]) if @after_each_proc
+
+          # print "#{i}|"
         end # end thread do
       end # each book
     end # crawl detail
@@ -99,6 +119,6 @@ class TunghuaBookCrawler
 
 end
 
-cc = TunghuaBookCrawler.new
-File.write('donhwa_books.json', JSON.pretty_generate(cc.books(detail: true)))
+# cc = TunghuaBookCrawler.new
+# File.write('donhwa_books.json', JSON.pretty_generate(cc.books(detail: true)))
 
